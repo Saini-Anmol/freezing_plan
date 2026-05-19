@@ -1,0 +1,45 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# CTP Plant — Freezing Simulation Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+
+plant: ctp                        # plant identifier (matches folders under inputs/, state/, etc.)
+
+# ── Study window ──────────────────────────────────────────────────────────────
+start_date: 2026-04-01            # first simulated day
+simulation_days: 30               # how many days the wrapper iterates
+planning_days: 30                 # LP planning horizon per daily run
+shift_start_hour: 7               # shift A starts at 07:00 (matches LP)
+
+# ── Demand input ──────────────────────────────────────────────────────────────
+demand_file: inputs/ctp/Apr_CTP_PCR_Requirement.xlsx
+base_demand_sheet: Initial demand
+revision_sheets:
+  - day: 11
+    sheet: Revised iteration 1 demand
+  - day: 21
+    sheet: Revised iteration 2 demand
+
+# ── Day-1 mould state ─────────────────────────────────────────────────────────
+day1_moulds_file: inputs/ctp/daily_moulds_pcr_2026-04-01.csv
+target_mould_life: 3000           # cap; daily moulds CSV stores consumed cycles
+
+# ── Tail-consolidation policy (moulds_manager.roll) ──────────────────────────
+# When a press's running SKU finishes, instead of force-mounting the highest-
+# priority compatible unmet SKU (the old "never idle" rule), only re-assign a
+# freed press to a SKU that still needs more presses to finish its remaining
+# demand within the study horizon. Presses left over are dropped (left idle).
+consolidation_enabled: true                  # false → restore old "never idle" behaviour
+consolidation_single_press_threshold: 1200   # remaining demand below this ⇒ 1 press suffices
+consolidation_slack: 1                        # headroom factor on the min-presses formula (1.0 = zero cushion; 0.9 = ~10% cushion)
+
+# ── Actuals simulator ─────────────────────────────────────────────────────────
+actuals_low_pct: -0.05            # -5%
+actuals_high_pct: 0.02            # +2%
+random_seed: 42                   # null for fresh randomness each run
+
+# ── LP wrapper ────────────────────────────────────────────────────────────────
+tyre_type: pcr
+lp_module_path: ../jk-ctp-lp-scheduler-main/ctp/Curing/V1
+
+# ── Output ────────────────────────────────────────────────────────────────────
+final_report_name: final_kpi_report.xlsx
