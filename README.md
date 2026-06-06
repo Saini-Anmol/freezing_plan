@@ -51,8 +51,8 @@ simulation logic.
 
 ## 1. Problem in one paragraph
 
-The Banmore plant has **~90 curing presses** that must produce a monthly demand
-across **~50 active PCR SKUs**. Each SKU has a fixed cure (cycle) time per mould,
+The Banmore plant has **170 curing presses** that must produce a monthly demand
+across its active PCR SKU set. Each SKU has a fixed cure (cycle) time per mould,
 each press has a hard list of physically allowable presses, the mould pool is
 finite, and **every SKU switch on a press costs a changeover** (300 min at BTP)
 plus a **mould cleaning** every fixed number of units. The scheduler must choose
@@ -145,14 +145,14 @@ Orchestration lives in `JK_LP_Curing_Scheduler_v2.run`.
 
 ## 4. Data inputs
 
-| Dataset | Loader | Typical rows | Key columns |
+| Dataset | Loader | Granularity | Key columns |
 |---|---|---|---|
-| **Demand** | `ETL.load_demand` | ~50 SKUs | `SKUCode`, `Quantity`, `Priority` |
-| **Cycle times** | `ETL.load_cycle_times` | ~220 SKUs | `SKUCode`, `CycleTime_min` |
-| **Machine allowable** | `ETL.load_machine_allowable` | ~250 SKUs | `SKUCode`, `Machines` (list of press IDs) |
-| **GT inventory** | `ETL.load_gt_inventory` | ~30 SKUs | `SKUCode`, `GT_Inventory` |
-| **Running moulds** | `ETL.load_running_moulds` | ~90 presses | `Machine`, `SKUCode`, `MouldNos`, `MouldLife_remaining`, `Num_Moulds` |
-| **Mould master** | `ETL.load_mould_master` | ~2,200 moulds | `MouldNo`, `Matl.Code` (SKU), `Active Flag` |
+| **Demand** | `ETL.load_demand` | per active PCR SKU | `SKUCode`, `Quantity`, `Priority` |
+| **Cycle times** | `ETL.load_cycle_times` | cycle-time master | `SKUCode`, `CycleTime_min` |
+| **Machine allowable** | `ETL.load_machine_allowable` | SKU → allowable presses | `SKUCode`, `Machines` (list of press IDs) |
+| **GT inventory** | `ETL.load_gt_inventory` | per SKU | `SKUCode`, `GT_Inventory` |
+| **Running moulds** | `ETL.load_running_moulds` | up to **170** presses | `Machine`, `SKUCode`, `MouldNos`, `MouldLife_remaining`, `Num_Moulds` |
+| **Mould master** | `ETL.load_mould_master` | full mould pool | `MouldNo`, `Matl.Code` (SKU), `Active Flag` |
 
 Each loader has a `*_from_excel` twin so the whole pipeline can run without a
 database connection.
@@ -200,10 +200,6 @@ fulfilment.
 
 `available_mins = PLANNING_DAYS × SHIFTS_PER_DAY × HOURS_PER_SHIFT × 60`.
 `locked_mins[m]` is the time already committed by continuity blocks ([§7](#7-continuity-blocks)).
-
-> **Edge case:** when continuity has already covered all remaining demand,
-> there are zero LP variables; HiGHS rejects empty problems, so the solver
-> short-circuits to an empty allocation and lets the downstream phases proceed.
 
 ---
 
@@ -313,20 +309,20 @@ All knobs live in the `Config` class at the top of the file. **Current BTP value
 
 ## 11. Code map
 
-`jk_curing_lp_PCR.py` (single file, ~1,600 lines):
+`jk_curing_lp_PCR.py` (single file, ~1,580 lines):
 
 | Section | Lines (approx.) | Role |
 |---|---|---|
-| `Config` | 70–122 | All tunable constants |
-| `MouldTracker` | 124–273 | Mould ledger + eligibility policy |
-| `ETL` | 275–443 | DB **and** Excel loaders for all six datasets |
-| `LP_Solver` | 445–551 | Builds & solves the continuous LP (Phase 3) |
-| `Rounder` | 553–731 | Integer rounding + greedy top-up (Phase 4) |
-| `ScheduleBuilder` | 733–933 | Changeover/cleaning insertion, shift splitting (Phase 5) |
-| `JK_LP_Curing_Scheduler_v2` | 935–1316 | Orchestrator: continuity, prep, run, summaries |
-| `ExcelExporter` | 1318–1489 | Five-sheet formatted workbook (Phase 6) |
-| Helpers | 1491–1527 | `con_split_into_shifts`, `_get_shift_fn` |
-| Entry points | 1529–1595 | `run_from_excel`, `run_from_database`, `__main__` |
+| `Config` | 72–120 | All tunable constants |
+| `MouldTracker` | 126–275 | Mould ledger + eligibility policy |
+| `ETL` | 277–445 | DB **and** Excel loaders for all six datasets |
+| `LP_Solver` | 447–543 | Builds & solves the continuous LP (Phase 3) |
+| `Rounder` | 545–723 | Integer rounding + greedy top-up (Phase 4) |
+| `ScheduleBuilder` | 725–925 | Changeover/cleaning insertion, shift splitting (Phase 5) |
+| `JK_LP_Curing_Scheduler_v2` | 927–1308 | Orchestrator: continuity, prep, run, summaries |
+| `ExcelExporter` | 1310–1478 | Five-sheet formatted workbook (Phase 6) |
+| Helpers | 1480–1519 | `con_split_into_shifts`, `_get_shift_fn` |
+| Entry points | 1521–1584 | `run_from_excel`, `run_from_database`, `__main__` |
 
 ---
 

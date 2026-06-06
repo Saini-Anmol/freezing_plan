@@ -1,6 +1,6 @@
 """
 JK Tyre BTP — PCR Curing LP Scheduler v4
-Designed By — Paranjay Dodiya — Algo8 AI Pvt Ltd
+
 ===============================================
 v4 fixes (over v3):
 -------------------
@@ -44,7 +44,6 @@ Phase 3 : Rounding     — convert continuous LP solution to integer cycles
 Phase 4 : Schedule     — build shift-wise row-level schedule
 Phase 5 : Export       — Excel output
 """
-from __future__ import annotations  # Python 3.9 compatibility for `X | Y` annotations
 
 import ast
 import math
@@ -528,26 +527,16 @@ class LP_Solver:
         print(f"  [LP] Eff capacity range: "
               f"{min(eff_cap.values()):,.0f}–{max(eff_cap.values()):,.0f} min/press")
 
-        # Guard: when continuity blocks have already covered all remaining demand,
-        # n_vars==0 → c is the empty 1-D array np.zeros(0). scipy.linprog (HiGHS)
-        # refuses empty problems, so short-circuit with a trivially-empty solution.
-        # Capacity constraints A_cap·x <= b_cap are vacuously satisfied (x is empty);
-        # there is nothing left for the LP to allocate. Rounder/ScheduleBuilder handle
-        # an empty allocation correctly (continuity rows are added downstream regardless).
-        if n_vars == 0:
-            print("  [LP] SKIPPED — 0 vars (continuity blocks cover all remaining demand)")
-            result_x = np.zeros(0)
-        else:
-            result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
-            if result.status != 0:
-                raise RuntimeError(f"LP did not converge: {result.message}")
-            result_x = result.x
-            unmet = sum(result.x[S * M + s] for s in range(S))
-            print(f"  [LP] OPTIMAL | Unmet demand-mins: {unmet:,.0f} ({unmet/60:.1f} hrs)")
+        result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
+        if result.status != 0:
+            raise RuntimeError(f"LP did not converge: {result.message}")
+
+        unmet = sum(result.x[S * M + s] for s in range(S))
+        print(f"  [LP] OPTIMAL | Unmet demand-mins: {unmet:,.0f} ({unmet/60:.1f} hrs)")
 
         meta = {"S":S,"M":M,"midx":midx,"all_machines":all_machines,
                 "sku_rows":sku_rows,"xidx":xidx}
-        return result_x, meta
+        return result.x, meta
 
 
 # ══════════════════════════════════════════════════════════════════════════════
