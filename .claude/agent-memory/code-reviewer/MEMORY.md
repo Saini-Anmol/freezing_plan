@@ -1,3 +1,0 @@
-- [Machine ID type convention](convention_machine_id_type.md) — wrapper convention is string-typed Machine; LP emits mixed (str from continuity, int from allocator) — landmine for groupby
-- [BTP is a placeholder](project_btp_placeholder.md) — BTP LP is a stub skeleton, not delivered; same dual-emit pattern observed in stub
-- [Reference run artifacts](reference_run_artifacts.md) — sample lp_shift_schedule_30day.csv lives under freezing_simulation/runs/<plant>/YYYY-MM-DD/
