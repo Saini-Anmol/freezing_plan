@@ -26,7 +26,7 @@ simulation logic.
 | **Tyre type** | PCR (Passenger Car Radial) |
 | **Version** | v4 — Production |
 | **Solver** | HiGHS via `scipy.optimize.linprog` (continuous LP + rounding) |
-| **Designed by** | Paranjay Dodiya — Algo8 AI Pvt. Ltd. |
+| **Designed by** | Anmol Saini |
 | **Entry class** | `JK_LP_Curing_Scheduler_v2` |
 
 ---
@@ -358,5 +358,5 @@ All knobs live in the `Config` class at the top of the file. **Current BTP value
 
 ---
 
-*Designed by Paranjay Dodiya — Algo8 AI Pvt. Ltd. for JK Tyre & Industries Ltd.
+*Designed by Anmol Saini — Algo8 for JK Tyre & Industries Ltd.
 (Banmore Tyre Plant). v4 — Production.*
